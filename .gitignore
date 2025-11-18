@@ -1,0 +1,51 @@
+**migrations**
+**Migrations**
+
+**init-scripts**
+
+**Properties**
+# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+# Logs
+*.log
+logs/
+serilog.json
+
+# Rider / JetBrains
+.idea/
+*.iml
+
+# Environment files
+.env
+*.env
+
+# Docker
+docker-data/
+docker-compose.override.yml
+
+# Databases
+*.db
+*.sqlite
+
+# OS-generated
+.DS_Store
+Thumbs.db
+
+# Publish output
+publish/
+dist/
+
+# Cache
+.vscode/
+.vs/
+ReSharper*/
+*_ReSharper*/

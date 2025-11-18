@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+
+# Build outputs
+bin/
+obj/
+out/
+
+# Logs
+logs/
+*.log
+
+# IDE configs
+.vscode/
+.idea/
+*.iml
+
+# Local configs
+.env
+*.env
+docker-compose.yml
+docker-compose.override.yml
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Tests (optional – skip if you need them in CI)
+tests/
+*.Test/

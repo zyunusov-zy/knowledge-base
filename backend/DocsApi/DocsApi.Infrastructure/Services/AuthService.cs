@@ -82,12 +82,10 @@ public class AuthService : IAuthService
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
+        
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim("username", user.Username),
-            new Claim("email", user.Email),
             new Claim(ClaimTypes.Role, user.Role)
         };
 
@@ -96,7 +94,8 @@ public class AuthService : IAuthService
             audience: _config["Jwt:Audience"],
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(_config.GetValue<int>("Jwt:AccessTokenMinutes")),
-            signingCredentials: creds);
+            signingCredentials: creds
+        );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

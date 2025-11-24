@@ -2,8 +2,10 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using DocsApi.Core.DTOs.Auth;
 using DocsApi.Core.Interfaces.IServices;
+using DocsApi.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DocsApi.API.Controllers;
 
@@ -12,10 +14,12 @@ namespace DocsApi.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly DocsDbContext _context;
 
-    public UsersController(IUserService userService)
+    public UsersController(IUserService userService, DocsDbContext context)
     {
         _userService = userService;
+        _context = context;
     }
     
     [HttpGet("me")]
@@ -43,5 +47,16 @@ public class UsersController : ControllerBase
     {
         var user = await _userService.CreateUserAsync(dto);
         return Ok(user);
+    }
+    
+    [HttpGet("emails")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllEmails()
+    {
+        var emails = await _context.Users
+            .Select(u => new { u.Id, u.Email, u.Username })
+            .ToListAsync();
+
+        return Ok(emails);
     }
 }

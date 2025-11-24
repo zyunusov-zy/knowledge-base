@@ -20,6 +20,8 @@ builder.Services.AddDbContext<DocsDbContext>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IDocumentationService, DocumentationService>();
+builder.Services.AddScoped<IDocumentationRepository, DocumentationRepository>();
 
 builder.Services.AddControllers();
 

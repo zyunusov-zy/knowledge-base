@@ -62,7 +62,7 @@ const Sidebar = ({ userRole, onNavigate, isCollapsed, onCollapseChange }) => {
         position: 'fixed',
         left: 0,
         top: 0,
-        zIndex: 1000,
+        zIndex: 30,
         boxShadow: '2px 0 8px rgba(0,0,0,0.15)'
       }}
     >

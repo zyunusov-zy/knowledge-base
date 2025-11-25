@@ -46,28 +46,52 @@ export default function MainPage() {
     setSelectedProject(null);
   };
 
- const handleCreateDocumentation = (payload) => {
-  // payload = { mode, project, documentation }
-  setEditingDocumentation(payload); 
-  setSelectedProject(null);
-};
+  /**
+   * Handle documentation actions from ProjectDetailModal
+   * Payload structure:
+   * {
+   *   mode: "new" | "view" | "edit",
+   *   project: projectObject,
+   *   documentationId: number | null
+   * }
+   */
+  const handleDocumentationAction = (payload) => {
+    console.log("Documentation action:", payload);
+    setEditingDocumentation(payload);
+    setSelectedProject(null); // Close the project modal
+  };
 
   const handleBackToProjects = () => {
     setEditingDocumentation(null);
   };
 
-  if (loading) return <div>Loading...</div>;
+  /**
+   * Optional: Refresh project list after documentation changes
+   */
+  const handleDocumentationSaved = () => {
+    // You can add logic here to refresh the project list if needed
+    // or update specific project data
+    handleBackToProjects();
+  };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Show DocumentationEditor when user wants to create/edit documentation
   if (editingDocumentation) {
-    // console.log(editingDocumentation.mode);
-    console.log(editingDocumentation.documentation);
     return (
       <DocumentationEditor
-        project={editingDocumentation}
+        mode={editingDocumentation.mode}
+        project={editingDocumentation.project}
+        documentationId={editingDocumentation.documentationId}
         onBack={handleBackToProjects}
+        onSaved={handleDocumentationSaved}
         userRole={user.role}
-        modes={editingDocumentation.mode}
-        documentation={editingDocumentation.documentation}
       />
     );
   }
@@ -80,7 +104,6 @@ export default function MainPage() {
         isCollapsed={isSidebarCollapsed}
         onCollapseChange={setIsSidebarCollapsed}
       />
-
       <div
         style={{
           flex: 1,
@@ -118,7 +141,7 @@ export default function MainPage() {
           onUpdated={handleProjectUpdate}
           onDeleted={handleProjectDelete}
           isSidebarCollapsed={isSidebarCollapsed}
-          onDocumentation={handleCreateDocumentation}
+          onDocumentation={handleDocumentationAction}
         />
       )}
     </div>

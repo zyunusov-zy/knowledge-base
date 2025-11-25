@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Edit2, Trash2, Plus, UserPlus, Search, Users } from "lucide-react";
+import { X, Edit2, Trash2, Plus, UserPlus, Search, Users, FileText, Clock, Pencil } from "lucide-react";
 
 export default function ProjectDetailModal({
   project,
@@ -22,8 +22,11 @@ export default function ProjectDetailModal({
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
+  // DOCUMENTATION VERSIONS
+  const [documentations, setDocumentations] = useState([]);
   const [activeDocumentation, setActiveDocumentation] = useState(null);
   const [docLoading, setDocLoading] = useState(true);
+  const [showVersions, setShowVersions] = useState(false);
 
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
@@ -77,31 +80,46 @@ export default function ProjectDetailModal({
     loadPermissionsAndUsers();
   }, [editMode, details]);
 
+  // -----------------------------
+  // LOAD ALL DOCUMENTATION VERSIONS (lightweight)
+  // -----------------------------
   useEffect(() => {
     if (!project) return;
 
-    const loadDocumentation = async () => {
+    const loadDocumentations = async () => {
       setDocLoading(true);
       const token = sessionStorage.getItem("accessToken");
 
-      const res = await fetch(
-        `http://localhost:5172/api/documentation/project/${project.id}/active`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      try {
+        // Load all versions for this project (lightweight - no structure)
+        const versionsRes = await fetch(
+          `http://localhost:5172/api/documentation/project/${project.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-      if (res.ok) {
-        const data = await res.json();
-        setActiveDocumentation(data);
-      } else {
-        setActiveDocumentation(null); // No docs yet
+        if (versionsRes.ok) {
+          const versions = await versionsRes.json();
+          setDocumentations(versions);
+
+          // Find active documentation
+          const active = versions.find(v => v.isActive && !v.isTest);
+          setActiveDocumentation(active || null);
+        } else {
+          setDocumentations([]);
+          setActiveDocumentation(null);
+        }
+      } catch (error) {
+        console.error("Error loading documentations:", error);
+        setDocumentations([]);
+        setActiveDocumentation(null);
       }
 
       setDocLoading(false);
     };
 
-    loadDocumentation();
+    loadDocumentations();
   }, [project]);
 
   // ESC KEY CLOSE
@@ -170,25 +188,86 @@ export default function ProjectDetailModal({
   };
 
   // -----------------------------
-  //  DOCUMENTATION
+  // DOCUMENTATION HANDLERS
   // -----------------------------
-  const handleOpenCurrentDocumentation = () => {
-  if (!activeDocumentation) return;
-  onDocumentation({
-    mode: "current",
-    project: details,
-    documentation: activeDocumentation, // <-- includes documentation.id
-  });
-};
+  const handleOpenDocumentation = (doc) => {
+    onDocumentation({
+      mode: "view", // or "edit" if you want to edit
+      project: details,
+      documentationId: doc.id, // Pass only the ID
+    });
+  };
 
-// User wants to create NEW documentation
-const handleCreateNewDocumentation = () => {
-  onDocumentation({
-    mode: "new",
-    project: details,
-    documentation: null,
-  });
-};
+  const handleCreateNewDocumentation = () => {
+    onDocumentation({
+      mode: "new",
+      project: details,
+      documentationId: null,
+    });
+  };
+
+  const handleDeleteDocumentation = async (docId) => {
+    if (!confirm("Are you sure you want to delete this documentation version?")) {
+      return;
+    }
+
+    const token = sessionStorage.getItem("accessToken");
+    const wasActive = activeDocumentation?.id === docId;
+    
+    try {
+      const res = await fetch(
+        `http://localhost:5172/api/documentation/${docId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.ok) {
+        // If we're deleting the active version, set previous version as active
+        if (wasActive && documentations.length > 1) {
+          // Sort by creation date and find the previous version
+          const sortedDocs = [...documentations]
+            .filter(d => d.id !== docId && d.isTest === activeDocumentation.isTest)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          
+          if (sortedDocs.length > 0) {
+            const previousDoc = sortedDocs[0];
+            
+            // Set previous version as active
+            await fetch(
+              `http://localhost:5172/api/documentation/project/${project.id}/set-active/${previousDoc.id}?isTest=${previousDoc.isTest}`,
+              {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
+            
+            // Update local state
+            setActiveDocumentation(previousDoc);
+            setDocumentations(prev => 
+              prev
+                .filter(d => d.id !== docId)
+                .map(d => ({
+                  ...d,
+                  isActive: d.id === previousDoc.id && d.isTest === previousDoc.isTest
+                }))
+            );
+          } else {
+            // No other versions, just remove
+            setDocumentations(prev => prev.filter(d => d.id !== docId));
+            setActiveDocumentation(null);
+          }
+        } else {
+          // Not active, just remove from list
+          setDocumentations(prev => prev.filter(d => d.id !== docId));
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting documentation:", error);
+      alert("Failed to delete documentation. Please try again.");
+    }
+  };
 
   // -----------------------------
   // USER SEARCH
@@ -351,50 +430,160 @@ const handleCreateNewDocumentation = () => {
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Users className="w-4 h-4" />
                     <span>
-                      d by{" "}
+                      Created by{" "}
                       <strong className="text-gray-700">
                         {details.creatorName}
                       </strong>
                     </span>
                   </div>
 
+                  {/* Documentation Section */}
                   <div className="space-y-3">
-                    {/* Everyone sees documentation info */}
-                    <div
-                      className={`bg-gray-50 p-4 rounded-xl border border-gray-200 transition-all
-    ${activeDocumentation ? "cursor-pointer hover:bg-gray-100 hover:shadow-md" : ""}`}
-                      onClick={() => {
-                        if (activeDocumentation) handleOpenCurrentDocumentation();
-                      }}
-                    >
-                      <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                        Current Documentation
-                      </h4>
-
-                      {docLoading ? (
-                        <p className="text-gray-500 text-sm">Loading...</p>
-                      ) : activeDocumentation ? (
-                        <p className="text-gray-700">
-                          <strong>Name:</strong> {project.name} <br />
-                          <strong>Version:</strong>{" "}
-                          {activeDocumentation.version}
-                        </p>
-                      ) : (
-                        <p className="text-gray-500">No documentation d yet.</p>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        Documentation
+                      </h3>
+                      {documentations.length > 0 && (
+                        <button
+                          onClick={() => setShowVersions(!showVersions)}
+                          className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                        >
+                          <Clock className="w-4 h-4" />
+                          {showVersions ? "Hide" : "Show"} All Versions ({documentations.length})
+                        </button>
                       )}
                     </div>
 
-                    {/* Only editors can  */}
-                    {CAN_EDIT && (
-                      <button
-                        onClick={handleOpenCurrentDocumentation}
-                        className="w-full py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-dashed border-blue-300 hover:border-blue-500 rounded-xl text-blue-700 font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-md group"
-                      >
-                        <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                        {activeDocumentation
-                          ? " New Version"
-                          : " Documentation"}
-                      </button>
+                    {docLoading ? (
+                      <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                        <p className="text-gray-500 text-sm">Loading documentation...</p>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Active Documentation */}
+                        {activeDocumentation ? (
+                          <div
+                            className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-300 cursor-pointer hover:shadow-lg transition-all group"
+                            onClick={() => handleOpenDocumentation(activeDocumentation)}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded">
+                                    ACTIVE
+                                  </span>
+                                  <span className="text-sm font-semibold text-gray-700">
+                                    Version {activeDocumentation.version}
+                                  </span>
+                                </div>
+                                <p className="text-gray-600 text-sm mb-2">
+                                  Created by <strong>{activeDocumentation.creatorName}</strong>
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {new Date(activeDocumentation.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              {CAN_EDIT && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenDocumentation(activeDocumentation);
+                                  }}
+                                  className="p-2 bg-white rounded-lg hover:bg-blue-100 transition-colors"
+                                >
+                                  <Pencil className="w-4 h-4 text-blue-600" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                            <p className="text-gray-500 text-center">No active documentation yet</p>
+                          </div>
+                        )}
+
+                        {/* All Versions List */}
+                        {showVersions && documentations.length > 0 && (
+                          <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
+                            <div className="max-h-96 overflow-y-auto">
+                              {documentations.map((doc) => (
+                                <div
+                                  key={doc.id}
+                                  className={`p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors ${
+                                    doc.isActive ? 'bg-blue-50' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div
+                                      className="flex-1 cursor-pointer"
+                                      onClick={() => handleOpenDocumentation(doc)}
+                                    >
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-semibold text-gray-800">
+                                          Version {doc.version}
+                                        </span>
+                                        {doc.isActive && (
+                                          <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded">
+                                            ACTIVE
+                                          </span>
+                                        )}
+                                        {doc.isTest && (
+                                          <span className="px-2 py-0.5 bg-yellow-500 text-white text-xs font-bold rounded">
+                                            TEST
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-sm text-gray-600">
+                                        by {doc.creatorName}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        {new Date(doc.createdAt).toLocaleDateString()}
+                                      </p>
+                                    </div>
+                                    
+                                    {CAN_EDIT && (
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenDocumentation(doc);
+                                          }}
+                                          className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors"
+                                          title="Edit"
+                                        >
+                                          <Pencil className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteDocumentation(doc.id);
+                                          }}
+                                          className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
+                                          title="Delete"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Create New Documentation Button */}
+                        {CAN_EDIT && (
+                          <button
+                            onClick={handleCreateNewDocumentation}
+                            className="w-full py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-dashed border-blue-300 hover:border-blue-500 rounded-xl text-blue-700 font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-md group"
+                          >
+                            <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                            {documentations.length > 0 ? "Create New Version" : "Create Documentation"}
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </>

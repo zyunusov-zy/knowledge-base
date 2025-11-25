@@ -4,8 +4,6 @@ using DocsApi.Core.Entities.Documentations;
 using DocsApi.Core.Interfaces.IRepository;
 using DocsApi.Core.Interfaces.IServices;
 
-namespace DocsApi.Infrastructure.Services;
-
 public class DocumentationService : IDocumentationService
 {
     private readonly IDocumentationRepository _repository;
@@ -15,6 +13,10 @@ public class DocumentationService : IDocumentationService
         _repository = repository;
     }
 
+    // ============================================================
+    // ORIGINAL METHODS (keeping your existing implementation)
+    // ============================================================
+    
     public async Task<DocumentationDto> GetByIdAsync(int id)
     {
         var doc = await _repository.GetByIdAsync(id);
@@ -39,9 +41,15 @@ public class DocumentationService : IDocumentationService
         return docs.Select(MapToDto).ToList();
     }
 
-    // ⭐ CHANGED: userName (string) → userId (int) ⭐
     public async Task<DocumentationDto> CreateAsync(CreateDocumentationDto dto, int userId)
     {
+        // Check if version already exists
+        var exists = await _repository.VersionExistsAsync(dto.ProjectId, dto.Version, dto.IsTest);
+        if (exists)
+        {
+            throw new InvalidOperationException($"Version {dto.Version} already exists for this project in {(dto.IsTest ? "test" : "production")} environment.");
+        }
+
         var documentation = new Documentation
         {
             ProjectId = dto.ProjectId,
@@ -49,8 +57,8 @@ public class DocumentationService : IDocumentationService
             IsTest = dto.IsTest,
             StructureJson = JsonSerializer.Serialize(dto.Structure),
             Description = dto.Description,
-            CreatedBy = userId,      // ⭐ Now using int
-            UpdatedBy = userId,      // ⭐ Now using int
+            CreatedBy = userId,
+            UpdatedBy = userId,
             IsActive = true,
             ChangeLogs = new List<DocumentationChangeLog>()
         };
@@ -66,9 +74,21 @@ public class DocumentationService : IDocumentationService
                     ChangeDate = entry.ChangeDate ?? DateTime.UtcNow,
                     ChangeType = entry.ChangeType,
                     Description = entry.Description,
-                    ChangedBy = userId  // ⭐ Now using int
+                    ChangedBy = userId
                 });
             }
+        }
+        else
+        {
+            // Add initial creation changelog
+            documentation.ChangeLogs.Add(new DocumentationChangeLog
+            {
+                Version = dto.Version,
+                ChangeDate = DateTime.UtcNow,
+                ChangeType = "created",
+                Description = "Initial documentation version created",
+                ChangedBy = userId
+            });
         }
 
         // Deactivate other versions
@@ -82,7 +102,6 @@ public class DocumentationService : IDocumentationService
         return MapToDto(created);
     }
 
-    // ⭐ CHANGED: userName (string) → userId (int) ⭐
     public async Task<DocumentationDto> UpdateAsync(int id, UpdateDocumentationDto dto, int userId)
     {
         var documentation = await _repository.GetByIdAsync(id);
@@ -97,7 +116,7 @@ public class DocumentationService : IDocumentationService
         documentation.IsTest = dto.IsTest;
         documentation.StructureJson = newStructure;
         documentation.Description = dto.Description;
-        documentation.UpdatedBy = userId;  // ⭐ Now using int
+        documentation.UpdatedBy = userId;
 
         // Add new changelog entries
         if (dto.ChangeLogEntries != null && dto.ChangeLogEntries.Any())
@@ -126,7 +145,7 @@ public class DocumentationService : IDocumentationService
                 ChangeDate = DateTime.UtcNow,
                 ChangeType = "modified",
                 Description = "Documentation structure updated",
-                ChangedBy = userId  // ⭐ Now using int
+                ChangedBy = userId
             };
             documentation.ChangeLogs.Add(changeLog);
         }
@@ -159,6 +178,81 @@ public class DocumentationService : IDocumentationService
         }).ToList();
     }
 
+    // ============================================================
+    // NEW METHODS - Additional functionality
+    // ============================================================
+
+    // Get lightweight list for listing page
+    public async Task<List<DocumentationListItemDto>> GetAllDocumentationsAsync()
+    {
+        var docs = await _repository.GetAllDocumentationsLightweightAsync();
+        return docs.Select(MapToListItemDto).ToList();
+    }
+
+    // Get unique documentation summary (one per project)
+    public async Task<List<DocumentationSummaryDto>> GetDocumentationSummariesAsync()
+    {
+        var projectIds = await _repository.GetProjectsWithDocumentationAsync();
+        var summaries = new List<DocumentationSummaryDto>();
+
+        foreach (var projectId in projectIds)
+        {
+            var allVersions = await _repository.GetAllByProjectAsync(projectId);
+            if (!allVersions.Any()) continue;
+
+            var latest = allVersions.OrderByDescending(d => d.CreatedAt).First();
+            
+            summaries.Add(new DocumentationSummaryDto
+            {
+                ProjectId = projectId,
+                ProjectName = latest.Project?.Name,
+                LatestVersion = latest.Version,
+                Title = ExtractTitle(latest.StructureJson),
+                LastUpdated = latest.UpdatedAt,
+                LastUpdatedByUsername = latest.Updater?.Username ?? latest.Creator?.Username,
+                TotalVersions = allVersions.Count,
+                HasTestVersion = allVersions.Any(d => d.IsTest),
+                HasProductionVersion = allVersions.Any(d => !d.IsTest)
+            });
+        }
+
+        return summaries.OrderByDescending(s => s.LastUpdated).ToList();
+    }
+
+    // Get specific version by version string
+    public async Task<DocumentationDto> GetByVersionAsync(int projectId, string version, bool isTest)
+    {
+        var doc = await _repository.GetByProjectAndVersionAsync(projectId, version, isTest);
+        return doc == null ? null : MapToDto(doc);
+    }
+
+    // ============================================================
+    // HELPER METHODS
+    // ============================================================
+
+    // Extract title from structure JSON
+    private string ExtractTitle(string structureJson)
+    {
+        try
+        {
+            var structure = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(structureJson);
+            if (structure != null && structure.Count > 0 && structure[0].ContainsKey("content"))
+            {
+                var content = JsonSerializer.Deserialize<Dictionary<string, object>>(structure[0]["content"].ToString());
+                if (content != null && content.ContainsKey("title"))
+                {
+                    return content["title"].ToString();
+                }
+            }
+        }
+        catch
+        {
+            // If parsing fails, return default
+        }
+        return "Untitled Documentation";
+    }
+
+    // Original mapping to DocumentationDto (keeping your implementation)
     private DocumentationDto MapToDto(Documentation doc)
     {
         return new DocumentationDto
@@ -183,6 +277,25 @@ public class DocumentationService : IDocumentationService
                 Description = c.Description,
                 ChangedBy = c.ChangedBy
             }).ToList()
+        };
+    }
+
+    // NEW mapping to lightweight DTO
+    private DocumentationListItemDto MapToListItemDto(Documentation doc)
+    {
+        return new DocumentationListItemDto
+        {
+            Id = doc.Id,
+            ProjectId = doc.ProjectId,
+            ProjectName = doc.Project?.Name,
+            Version = doc.Version,
+            Title = ExtractTitle(doc.StructureJson),
+            CreatedByUsername = doc.Creator?.Username ?? "Unknown",
+            CreatedAt = doc.CreatedAt,
+            UpdatedAt = doc.UpdatedAt,
+            IsActive = doc.IsActive,
+            IsTest = doc.IsTest,
+            ChangeLogCount = doc.ChangeLogs?.Count ?? 0
         };
     }
 }

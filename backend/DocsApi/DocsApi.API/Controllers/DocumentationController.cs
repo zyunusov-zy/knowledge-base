@@ -18,13 +18,16 @@ public class DocumentationController : ControllerBase
         _service = service;
     }
 
+    // ============================================================
+    // ORIGINAL ENDPOINTS (keeping your existing implementation)
+    // ============================================================
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
         var doc = await _service.GetByIdAsync(id);
         if (doc == null)
             return NotFound();
-
         return Ok(doc);
     }
 
@@ -34,7 +37,6 @@ public class DocumentationController : ControllerBase
         var doc = await _service.GetActiveByProjectAsync(projectId, isTest);
         if (doc == null)
             return NotFound();
-
         return Ok(doc);
     }
 
@@ -64,9 +66,15 @@ public class DocumentationController : ControllerBase
             return Unauthorized("Invalid user token");
         }
 
-        var created = await _service.CreateAsync(dto, userId);
-        
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        try
+        {
+            var created = await _service.CreateAsync(dto, userId);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{id}")]
@@ -85,7 +93,6 @@ public class DocumentationController : ControllerBase
         
         if (updated == null)
             return NotFound();
-
         return Ok(updated);
     }
 
@@ -95,7 +102,6 @@ public class DocumentationController : ControllerBase
         var result = await _service.DeleteAsync(id);
         if (!result)
             return NotFound();
-
         return NoContent();
     }
 
@@ -105,7 +111,6 @@ public class DocumentationController : ControllerBase
         var result = await _service.SetActiveVersionAsync(projectId, documentationId, isTest);
         if (!result)
             return NotFound();
-
         return Ok();
     }
 
@@ -114,5 +119,71 @@ public class DocumentationController : ControllerBase
     {
         var logs = await _service.GetChangeLogsAsync(documentationId);
         return Ok(logs);
+    }
+
+    // ============================================================
+    // NEW ENDPOINTS - Additional functionality
+    // ============================================================
+
+    /// <summary>
+    /// Get lightweight list of ALL documentation (for main listing page)
+    /// Returns: id, title, version, creator username, dates, isTest
+    /// Only returns essential fields - NOT the full structure
+    /// </summary>
+    [HttpGet("list")]
+    public async Task<IActionResult> GetAllDocumentations()
+    {
+        try
+        {
+            var docs = await _service.GetAllDocumentationsAsync();
+            return Ok(docs);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error retrieving documentation list", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Get unique documentation summaries (one per project)
+    /// Useful for showing distinct projects with their latest info
+    /// Groups all versions by project and returns summary
+    /// </summary>
+    [HttpGet("summaries")]
+    public async Task<IActionResult> GetDocumentationSummaries()
+    {
+        try
+        {
+            var summaries = await _service.GetDocumentationSummariesAsync();
+            return Ok(summaries);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error retrieving documentation summaries", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Get specific version of documentation by version string
+    /// Example: /api/documentation/project/5/version/1.5.2?isTest=false
+    /// Use this to load older versions
+    /// </summary>
+    [HttpGet("project/{projectId}/version/{version}")]
+    public async Task<IActionResult> GetByVersion(int projectId, string version, [FromQuery] bool isTest = false)
+    {
+        try
+        {
+            var doc = await _service.GetByVersionAsync(projectId, version, isTest);
+            if (doc == null)
+                return NotFound(new { 
+                    message = $"Version {version} not found for this project in {(isTest ? "test" : "production")} environment" 
+                });
+            
+            return Ok(doc);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error retrieving documentation version", error = ex.Message });
+        }
     }
 }

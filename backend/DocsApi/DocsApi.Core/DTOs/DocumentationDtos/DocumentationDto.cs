@@ -7,6 +7,7 @@ public class DocumentationDto
     public string Version { get; set; }
     public bool IsTest { get; set; }
     public object Structure { get; set; }
+    public string Title { get; set; }
     public string Description { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

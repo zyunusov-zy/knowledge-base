@@ -1,5 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Edit2, Trash2, Plus, UserPlus, Search, Users, FileText, Clock, Pencil } from "lucide-react";
+import {
+  X,
+  Edit2,
+  Trash2,
+  Plus,
+  UserPlus,
+  Search,
+  Users,
+  FileText,
+  Clock,
+  Pencil,
+} from "lucide-react";
 
 export default function ProjectDetailModal({
   project,
@@ -104,7 +115,9 @@ export default function ProjectDetailModal({
           setDocumentations(versions);
 
           // Find active documentation
-          const active = versions.find(v => v.isActive && !v.isTest);
+          const active = versions.find((v) => v.isActive && !v.isTest);
+
+          console.log(active);
           setActiveDocumentation(active || null);
         } else {
           setDocumentations([]);
@@ -207,13 +220,15 @@ export default function ProjectDetailModal({
   };
 
   const handleDeleteDocumentation = async (docId) => {
-    if (!confirm("Are you sure you want to delete this documentation version?")) {
+    if (
+      !confirm("Are you sure you want to delete this documentation version?")
+    ) {
       return;
     }
 
     const token = sessionStorage.getItem("accessToken");
     const wasActive = activeDocumentation?.id === docId;
-    
+
     try {
       const res = await fetch(
         `http://localhost:5172/api/documentation/${docId}`,
@@ -228,12 +243,14 @@ export default function ProjectDetailModal({
         if (wasActive && documentations.length > 1) {
           // Sort by creation date and find the previous version
           const sortedDocs = [...documentations]
-            .filter(d => d.id !== docId && d.isTest === activeDocumentation.isTest)
+            .filter(
+              (d) => d.id !== docId && d.isTest === activeDocumentation.isTest
+            )
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          
+
           if (sortedDocs.length > 0) {
             const previousDoc = sortedDocs[0];
-            
+
             // Set previous version as active
             await fetch(
               `http://localhost:5172/api/documentation/project/${project.id}/set-active/${previousDoc.id}?isTest=${previousDoc.isTest}`,
@@ -242,25 +259,26 @@ export default function ProjectDetailModal({
                 headers: { Authorization: `Bearer ${token}` },
               }
             );
-            
+
             // Update local state
             setActiveDocumentation(previousDoc);
-            setDocumentations(prev => 
+            setDocumentations((prev) =>
               prev
-                .filter(d => d.id !== docId)
-                .map(d => ({
+                .filter((d) => d.id !== docId)
+                .map((d) => ({
                   ...d,
-                  isActive: d.id === previousDoc.id && d.isTest === previousDoc.isTest
+                  isActive:
+                    d.id === previousDoc.id && d.isTest === previousDoc.isTest,
                 }))
             );
           } else {
             // No other versions, just remove
-            setDocumentations(prev => prev.filter(d => d.id !== docId));
+            setDocumentations((prev) => prev.filter((d) => d.id !== docId));
             setActiveDocumentation(null);
           }
         } else {
           // Not active, just remove from list
-          setDocumentations(prev => prev.filter(d => d.id !== docId));
+          setDocumentations((prev) => prev.filter((d) => d.id !== docId));
         }
       }
     } catch (error) {
@@ -450,14 +468,17 @@ export default function ProjectDetailModal({
                           className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
                         >
                           <Clock className="w-4 h-4" />
-                          {showVersions ? "Hide" : "Show"} All Versions ({documentations.length})
+                          {showVersions ? "Hide" : "Show"} All Versions (
+                          {documentations.length})
                         </button>
                       )}
                     </div>
 
                     {docLoading ? (
                       <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
-                        <p className="text-gray-500 text-sm">Loading documentation...</p>
+                        <p className="text-gray-500 text-sm">
+                          Loading documentation...
+                        </p>
                       </div>
                     ) : (
                       <>
@@ -465,7 +486,9 @@ export default function ProjectDetailModal({
                         {activeDocumentation ? (
                           <div
                             className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-300 cursor-pointer hover:shadow-lg transition-all group"
-                            onClick={() => handleOpenDocumentation(activeDocumentation)}
+                            onClick={() =>
+                              handleOpenDocumentation(activeDocumentation)
+                            }
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
@@ -474,21 +497,31 @@ export default function ProjectDetailModal({
                                     ACTIVE
                                   </span>
                                   <span className="text-sm font-semibold text-gray-700">
-                                    Version {activeDocumentation.version}
+                                    Title {activeDocumentation.title}
                                   </span>
                                 </div>
+                                <span className="text-sm font-semibold text-gray-700">
+                                  Version {activeDocumentation.version}
+                                </span>
                                 <p className="text-gray-600 text-sm mb-2">
-                                  Created by <strong>{activeDocumentation.creatorName}</strong>
+                                  Created by{" "}
+                                  <strong>
+                                    {activeDocumentation.creatorName}
+                                  </strong>
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {new Date(activeDocumentation.createdAt).toLocaleDateString()}
+                                  {new Date(
+                                    activeDocumentation.createdAt
+                                  ).toLocaleDateString()}
                                 </p>
                               </div>
                               {CAN_EDIT && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleOpenDocumentation(activeDocumentation);
+                                    handleOpenDocumentation(
+                                      activeDocumentation
+                                    );
                                   }}
                                   className="p-2 bg-white rounded-lg hover:bg-blue-100 transition-colors"
                                 >
@@ -499,7 +532,9 @@ export default function ProjectDetailModal({
                           </div>
                         ) : (
                           <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
-                            <p className="text-gray-500 text-center">No active documentation yet</p>
+                            <p className="text-gray-500 text-center">
+                              No active documentation yet
+                            </p>
                           </div>
                         )}
 
@@ -511,13 +546,15 @@ export default function ProjectDetailModal({
                                 <div
                                   key={doc.id}
                                   className={`p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors ${
-                                    doc.isActive ? 'bg-blue-50' : ''
+                                    doc.isActive ? "bg-blue-50" : ""
                                   }`}
                                 >
                                   <div className="flex items-center justify-between">
                                     <div
                                       className="flex-1 cursor-pointer"
-                                      onClick={() => handleOpenDocumentation(doc)}
+                                      onClick={() =>
+                                        handleOpenDocumentation(doc)
+                                      }
                                     >
                                       <div className="flex items-center gap-2 mb-1">
                                         <span className="font-semibold text-gray-800">
@@ -538,10 +575,12 @@ export default function ProjectDetailModal({
                                         by {doc.creatorName}
                                       </p>
                                       <p className="text-xs text-gray-500">
-                                        {new Date(doc.createdAt).toLocaleDateString()}
+                                        {new Date(
+                                          doc.createdAt
+                                        ).toLocaleDateString()}
                                       </p>
                                     </div>
-                                    
+
                                     {CAN_EDIT && (
                                       <div className="flex items-center gap-2">
                                         <button
@@ -580,7 +619,9 @@ export default function ProjectDetailModal({
                             className="w-full py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-dashed border-blue-300 hover:border-blue-500 rounded-xl text-blue-700 font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-md group"
                           >
                             <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                            {documentations.length > 0 ? "Create New Version" : "Create Documentation"}
+                            {documentations.length > 0
+                              ? "Create New Version"
+                              : "Create Documentation"}
                           </button>
                         )}
                       </>

@@ -6,5 +6,6 @@ public class UpdateDocumentationDto
     public bool IsTest { get; set; }
     public object Structure { get; set; }
     public string Description { get; set; }
+    public string Title { get; set; }
     public List<ChangeLogEntryDto> ChangeLogEntries { get; set; }
 }

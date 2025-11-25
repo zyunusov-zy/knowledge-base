@@ -136,6 +136,7 @@ const handleSave = async () => {
         version: version,
         isTest: false,
         structure: structure,
+        title: structure[0].content.title,
         description: `Documentation for ${project.name} - Version ${version}`, // Required field
         changeLogEntries: changeLogEntries, // Required field
       };

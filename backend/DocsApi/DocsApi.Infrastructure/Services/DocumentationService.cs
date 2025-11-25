@@ -60,6 +60,7 @@ public class DocumentationService : IDocumentationService
             CreatedBy = userId,
             UpdatedBy = userId,
             IsActive = true,
+            Title =  dto.Title,
             ChangeLogs = new List<DocumentationChangeLog>()
         };
 
@@ -117,6 +118,7 @@ public class DocumentationService : IDocumentationService
         documentation.StructureJson = newStructure;
         documentation.Description = dto.Description;
         documentation.UpdatedBy = userId;
+        documentation.Title = dto.Title;
 
         // Add new changelog entries
         if (dto.ChangeLogEntries != null && dto.ChangeLogEntries.Any())
@@ -268,6 +270,7 @@ public class DocumentationService : IDocumentationService
             CreatedBy = doc.CreatedBy,
             UpdatedBy = doc.UpdatedBy,
             IsActive = doc.IsActive,
+            Title = doc.Title,
             ChangeLogs = doc.ChangeLogs?.Select(c => new ChangeLogDto
             {
                 Id = c.Id,
@@ -289,7 +292,7 @@ public class DocumentationService : IDocumentationService
             ProjectId = doc.ProjectId,
             ProjectName = doc.Project?.Name,
             Version = doc.Version,
-            Title = ExtractTitle(doc.StructureJson),
+            Title = doc.Title,
             CreatedByUsername = doc.Creator?.Username ?? "Unknown",
             CreatedAt = doc.CreatedAt,
             UpdatedAt = doc.UpdatedAt,

@@ -29,6 +29,10 @@ public class Documentation
     [MaxLength(2000)]
     public string Description { get; set; }
     
+    [Required]
+    [MaxLength(1000)]
+    public string Title { get; set; }
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

@@ -24,7 +24,7 @@ export const refreshAccessToken = async () => {
   const refreshToken = getRefreshToken();
   
   try {
-    const response = await fetch('http://localhost:5172/api/auth/refresh', {
+    const response = await fetch('http://localhost:5000/api/auth/refresh', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -28,7 +28,7 @@ const BlockControls = ({
   return (
     <>
       <div className="absolute -left-16 top-0 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 z-10">
-        <div className="flex flex-col gap-1 bg-white rounded-lg border border-gray-200 shadow-lg p-1">
+        <div className="flex flex-row gap-1 bg-white rounded-lg border border-gray-200 shadow-lg p-1">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -49,9 +49,7 @@ const BlockControls = ({
           >
             <Edit2 className="w-4 h-4 text-green-600" />
           </button>
-        </div>
-        <div className="flex flex-col gap-1 bg-white rounded-lg border border-gray-200 shadow-lg p-1">
-          <button
+                    <button
             onClick={(e) => {
               e.stopPropagation();
               onMove(block.id, "up");

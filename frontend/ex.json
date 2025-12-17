@@ -1,0 +1,249 @@
+{
+  "version": "2.0.0",
+  "title": "Product API Documentation",
+  "description": "Complete API documentation for Product Management System - Version 2.0.0",
+  "isTest": false,
+  "structure": [
+    {
+      "id": "cover",
+      "type": "cover",
+      "content": {
+        "title": "Product API Documentation",
+        "subtitle": "RESTful API for Product Management",
+        "version": "2.0.0",
+        "author": "Development Team",
+        "date": "2024-01-15"
+      }
+    },
+    {
+      "id": "changelog",
+      "type": "changelog",
+      "content": {
+        "title": "Change Log",
+        "entries": [
+          {
+            "version": "2.0.0",
+            "type": "added",
+            "description": "Added new authentication endpoints"
+          },
+          {
+            "version": "2.0.0",
+            "type": "modified",
+            "description": "Updated user profile endpoints with additional fields"
+          },
+          {
+            "version": "1.5.0",
+            "type": "fixed",
+            "description": "Fixed pagination bug in product listing"
+          }
+        ]
+      }
+    },
+    {
+      "id": "intro-1",
+      "type": "text",
+      "content": {
+        "title": "Introduction",
+        "body": "Welcome to the Product API Documentation. This API allows you to manage products, users, and orders in your e-commerce platform."
+      }
+    },
+    {
+      "id": "auth-section",
+      "type": "section",
+      "content": {
+        "title": "Authentication",
+        "description": "All API requests require authentication using Bearer tokens."
+      }
+    },
+    {
+      "id": "endpoint-1",
+      "type": "endpoint",
+      "content": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "description": "Authenticate user and receive access token",
+        "parameters": [
+          {
+            "name": "email",
+            "type": "string",
+            "required": true,
+            "description": "User email address"
+          },
+          {
+            "name": "password",
+            "type": "string",
+            "required": true,
+            "description": "User password"
+          }
+        ],
+        "responses": [
+          {
+            "code": 200,
+            "description": "Successful authentication",
+            "example": {
+              "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "expiresIn": 3600
+            }
+          },
+          {
+            "code": 401,
+            "description": "Invalid credentials",
+            "example": {
+              "error": "Invalid email or password"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "products-section",
+      "type": "section",
+      "content": {
+        "title": "Products",
+        "description": "Endpoints for managing products in the system."
+      }
+    },
+    {
+      "id": "endpoint-2",
+      "type": "endpoint",
+      "content": {
+        "method": "GET",
+        "path": "/api/products",
+        "description": "Retrieve a list of all products",
+        "parameters": [
+          {
+            "name": "page",
+            "type": "number",
+            "required": false,
+            "description": "Page number for pagination (default: 1)"
+          },
+          {
+            "name": "limit",
+            "type": "number",
+            "required": false,
+            "description": "Number of items per page (default: 20)"
+          },
+          {
+            "name": "category",
+            "type": "string",
+            "required": false,
+            "description": "Filter by category"
+          }
+        ],
+        "responses": [
+          {
+            "code": 200,
+            "description": "List of products",
+            "example": {
+              "data": [
+                {
+                  "id": 1,
+                  "name": "Laptop Pro",
+                  "price": 1299.99,
+                  "category": "Electronics",
+                  "inStock": true
+                }
+              ],
+              "pagination": {
+                "page": 1,
+                "limit": 20,
+                "total": 150
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "endpoint-3",
+      "type": "endpoint",
+      "content": {
+        "method": "POST",
+        "path": "/api/products",
+        "description": "Create a new product",
+        "parameters": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "description": "Product name"
+          },
+          {
+            "name": "price",
+            "type": "number",
+            "required": true,
+            "description": "Product price"
+          },
+          {
+            "name": "category",
+            "type": "string",
+            "required": true,
+            "description": "Product category"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": false,
+            "description": "Product description"
+          }
+        ],
+        "responses": [
+          {
+            "code": 201,
+            "description": "Product created successfully",
+            "example": {
+              "id": 151,
+              "name": "Wireless Mouse",
+              "price": 29.99,
+              "category": "Electronics",
+              "createdAt": "2024-01-15T10:30:00Z"
+            }
+          },
+          {
+            "code": 400,
+            "description": "Validation error",
+            "example": {
+              "error": "Product name is required"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "code-example-1",
+      "type": "code",
+      "content": {
+        "title": "Example: Creating a Product",
+        "language": "javascript",
+        "code": "const createProduct = async () => {\n  const response = await fetch('/api/products', {\n    method: 'POST',\n    headers: {\n      'Authorization': 'Bearer YOUR_TOKEN',\n      'Content-Type': 'application/json'\n    },\n    body: JSON.stringify({\n      name: 'Wireless Mouse',\n      price: 29.99,\n      category: 'Electronics',\n      description: 'Ergonomic wireless mouse'\n    })\n  });\n  \n  const product = await response.json();\n  console.log(product);\n};"
+      }
+    },
+    {
+      "id": "notes-1",
+      "type": "note",
+      "content": {
+        "title": "Important Note",
+        "type": "warning",
+        "message": "All POST and PUT requests must include a valid authentication token in the Authorization header."
+      }
+    }
+  ],
+  "changeLogEntries": [
+    {
+      "version": "2.0.0",
+      "changeType": "added",
+      "description": "Added new authentication endpoints"
+    },
+    {
+      "version": "2.0.0",
+      "changeType": "modified",
+      "description": "Updated user profile endpoints with additional fields"
+    },
+    {
+      "version": "1.5.0",
+      "changeType": "fixed",
+      "description": "Fixed pagination bug in product listing"
+    }
+  ]
+}

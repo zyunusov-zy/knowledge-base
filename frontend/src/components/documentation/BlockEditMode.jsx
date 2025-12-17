@@ -292,6 +292,98 @@ const BlockEditMode = ({
           </>
         );
 
+case "table":
+        return (
+          <div className="space-y-4 overflow-x-auto">
+            <div>
+              <label className="block text-sm font-bold mb-2">Headers:</label>
+              <div className="flex gap-2 mb-2 flex-wrap">
+                {(editingContent.headers || []).map((header, i) => (
+                  <div key={i} className="flex gap-2 min-w-[150px]">
+                    <input
+                      type="text"
+                      value={header}
+                      onChange={(e) => {
+                        const newHeaders = [...editingContent.headers];
+                        newHeaders[i] = e.target.value;
+                        setEditingContent({ ...editingContent, headers: newHeaders });
+                      }}
+                      className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"
+                      placeholder={`Header ${i + 1}`}
+                    />
+                    <button
+                      onClick={() => {
+                        const newHeaders = editingContent.headers.filter((_, idx) => idx !== i);
+                        const newRows = editingContent.rows.map(row => row.filter((_, idx) => idx !== i));
+                        setEditingContent({ ...editingContent, headers: newHeaders, rows: newRows });
+                      }}
+                      className="px-2 py-2 bg-red-500 text-white rounded-lg flex-shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  const newHeaders = [...(editingContent.headers || []), ""];
+                  const newRows = (editingContent.rows || []).map(row => [...row, ""]);
+                  setEditingContent({ ...editingContent, headers: newHeaders, rows: newRows });
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
+              >
+                + Add Column
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold mb-2">Rows:</label>
+              <div className="space-y-2">
+                {(editingContent.rows || []).map((row, rowIdx) => (
+                  <div key={rowIdx} className="flex gap-2 flex-wrap">
+                    {row.map((cell, cellIdx) => (
+                      <input
+                        key={cellIdx}
+                        type="text"
+                        value={cell}
+                        onChange={(e) => {
+                          const newRows = [...editingContent.rows];
+                          newRows[rowIdx][cellIdx] = e.target.value;
+                          setEditingContent({ ...editingContent, rows: newRows });
+                        }}
+                        className="min-w-[150px] flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"
+                        placeholder={`Cell ${rowIdx + 1},${cellIdx + 1}`}
+                      />
+                    ))}
+                    <button
+                      onClick={() => {
+                        const newRows = editingContent.rows.filter((_, idx) => idx !== rowIdx);
+                        setEditingContent({ ...editingContent, rows: newRows });
+                      }}
+                      className="px-2 py-2 bg-red-500 text-white rounded-lg flex-shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  const colCount = (editingContent.headers || []).length;
+                  const newRow = Array(colCount).fill("");
+                  setEditingContent({ 
+                    ...editingContent, 
+                    rows: [...(editingContent.rows || []), newRow] 
+                  });
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm mt-2"
+              >
+                + Add Row
+              </button>
+            </div>
+          </div>
+        );
+
       case "method":
         return (
           <div className="space-y-4">
@@ -330,170 +422,265 @@ const BlockEditMode = ({
               </select>
             </div>
 
-            <div>
+            {/* Request Examples Section */}
+            <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
               <label className="block text-sm font-bold mb-2">
-                Request Parameters:
+                Request Examples:
               </label>
-              {(editingContent.requestParams || []).map((param, i) => (
-                <div key={i} className="flex gap-2 mb-2 flex-wrap">
-                  <input
-                    type="text"
-                    value={param.name}
-                    onChange={(e) =>
-                      updateArrayItem("requestParams", i, "name", e.target.value)
-                    }
-                    className="flex-1 min-w-[120px] px-3 py-2 border-2 border-gray-300 rounded-lg"
-                    placeholder="Name"
-                  />
-                  <input
-                    type="text"
-                    value={param.type}
-                    onChange={(e) =>
-                      updateArrayItem("requestParams", i, "type", e.target.value)
-                    }
-                    className="w-32 px-3 py-2 border-2 border-gray-300 rounded-lg"
-                    placeholder="Type"
-                  />
-                  <label className="flex items-center gap-1 px-2">
+              {(editingContent.requests || []).map((req, i) => (
+                <div key={i} className="mb-4 p-4 bg-white rounded-lg border-2 border-gray-300">
+                  <div className="flex justify-between items-center mb-2">
                     <input
-                      type="checkbox"
-                      checked={param.required}
+                      type="text"
+                      value={req.title || ""}
                       onChange={(e) =>
-                        updateArrayItem(
-                          "requestParams",
-                          i,
-                          "required",
-                          e.target.checked
-                        )
+                        updateArrayItem("requests", i, "title", e.target.value)
                       }
-                      className="w-4 h-4"
+                      className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg font-semibold mr-2"
+                      placeholder="Request Title (e.g., Example 1)"
                     />
-                    <span className="text-sm">Required</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={param.description}
+                    <button
+                      onClick={() => removeArrayItem("requests", i)}
+                      className="px-3 py-2 bg-red-500 text-white rounded-lg"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <label className="block text-xs font-semibold mb-1">Parameters:</label>
+                    {(req.params || []).map((param, j) => (
+                      <div key={j} className="flex gap-2 mb-2 flex-wrap">
+                        <input
+                          type="text"
+                          value={param.name || ""}
+                          onChange={(e) => {
+                            const newRequests = [...(editingContent.requests || [])];
+                            const newParams = [...(newRequests[i].params || [])];
+                            newParams[j] = { ...(newParams[j] || {}), name: e.target.value };
+                            newRequests[i] = { ...(newRequests[i] || {}), params: newParams };
+                            setEditingContent({ ...editingContent, requests: newRequests });
+                          }}
+                          className="flex-1 min-w-[100px] px-2 py-1 border border-gray-300 rounded text-sm"
+                          placeholder="Name"
+                        />
+                        <input
+                          type="text"
+                          value={param.type || ""}
+                          onChange={(e) => {
+                            const newRequests = [...(editingContent.requests || [])];
+                            const newParams = [...(newRequests[i].params || [])];
+                            newParams[j] = { ...(newParams[j] || {}), type: e.target.value };
+                            newRequests[i] = { ...(newRequests[i] || {}), params: newParams };
+                            setEditingContent({ ...editingContent, requests: newRequests });
+                          }}
+                          className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                          placeholder="Type"
+                        />
+                        <label className="flex items-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={param.required || false}
+                            onChange={(e) => {
+                              const newRequests = [...(editingContent.requests || [])];
+                              const newParams = [...(newRequests[i].params || [])];
+                              newParams[j] = { ...(newParams[j] || {}), required: e.target.checked };
+                              newRequests[i] = { ...(newRequests[i] || {}), params: newParams };
+                              setEditingContent({ ...editingContent, requests: newRequests });
+                            }}
+                            className="w-3 h-3"
+                          />
+                          <span className="text-xs">Req</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={param.description || ""}
+                          onChange={(e) => {
+                            const newRequests = [...(editingContent.requests || [])];
+                            const newParams = [...(newRequests[i].params || [])];
+                            newParams[j] = { ...(newParams[j] || {}), description: e.target.value };
+                            newRequests[i] = { ...(newRequests[i] || {}), params: newParams };
+                            setEditingContent({ ...editingContent, requests: newRequests });
+                          }}
+                          className="flex-1 min-w-[150px] px-2 py-1 border border-gray-300 rounded text-sm"
+                          placeholder="Description"
+                        />
+                        <button
+                          onClick={() => {
+                            const newRequests = [...(editingContent.requests || [])];
+                            newRequests[i] = { 
+                              ...(newRequests[i] || {}), 
+                              params: (newRequests[i].params || []).filter((_, idx) => idx !== j) 
+                            };
+                            setEditingContent({ ...editingContent, requests: newRequests });
+                          }}
+                          className="px-2 py-1 bg-red-500 text-white rounded text-sm flex-shrink-0"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => {
+                        const newRequests = [...(editingContent.requests || [])];
+                        newRequests[i] = { 
+                          ...(newRequests[i] || {}), 
+                          params: [...(newRequests[i].params || []), { name: "", type: "string", required: false, description: "" }] 
+                        };
+                        setEditingContent({ ...editingContent, requests: newRequests });
+                      }}
+                      className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                    >
+                      + Add Param
+                    </button>
+                  </div>
+
+                  <textarea
+                    value={req.example || ""}
                     onChange={(e) =>
-                      updateArrayItem(
-                        "requestParams",
-                        i,
-                        "description",
-                        e.target.value
-                      )
+                      updateArrayItem("requests", i, "example", e.target.value)
                     }
-                    className="flex-1 min-w-[200px] px-3 py-2 border-2 border-gray-300 rounded-lg"
-                    placeholder="Description"
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg font-mono text-xs"
+                    rows="4"
+                    placeholder="Request body example (JSON)"
                   />
-                  <button
-                    onClick={() => removeArrayItem("requestParams", i)}
-                    className="px-3 py-2 bg-red-500 text-white rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               ))}
               <button
                 onClick={() =>
-                  addArrayItem("requestParams", {
-                    name: "",
-                    type: "string",
-                    required: false,
-                    description: "",
+                  addArrayItem("requests", {
+                    title: "",
+                    params: [],
+                    example: "{}",
                   })
                 }
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
               >
-                + Add Parameter
+                + Add Request Example
               </button>
             </div>
 
-            <div>
+            {/* Response Examples Section */}
+            <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
               <label className="block text-sm font-bold mb-2">
-                Response Parameters:
+                Response Examples:
               </label>
-              {(editingContent.responseParams || []).map((param, i) => (
-                <div key={i} className="flex gap-2 mb-2 flex-wrap">
-                  <input
-                    type="text"
-                    value={param.name}
+              {(editingContent.responses || []).map((res, i) => (
+                <div key={i} className="mb-4 p-4 bg-white rounded-lg border-2 border-gray-300">
+                  <div className="flex justify-between items-center mb-2">
+                    <input
+                      type="text"
+                      value={res.title || ""}
+                      onChange={(e) =>
+                        updateArrayItem("responses", i, "title", e.target.value)
+                      }
+                      className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg font-semibold mr-2"
+                      placeholder="Response Title (e.g., Success Response)"
+                    />
+                    <button
+                      onClick={() => removeArrayItem("responses", i)}
+                      className="px-3 py-2 bg-red-500 text-white rounded-lg"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <label className="block text-xs font-semibold mb-1">Parameters:</label>
+                    {(res.params || []).map((param, j) => (
+                      <div key={j} className="flex gap-2 mb-2 flex-wrap">
+                        <input
+                          type="text"
+                          value={param.name || ""}
+                          onChange={(e) => {
+                            const newResponses = [...(editingContent.responses || [])];
+                            const newParams = [...(newResponses[i].params || [])];
+                            newParams[j] = { ...(newParams[j] || {}), name: e.target.value };
+                            newResponses[i] = { ...(newResponses[i] || {}), params: newParams };
+                            setEditingContent({ ...editingContent, responses: newResponses });
+                          }}
+                          className="flex-1 min-w-[100px] px-2 py-1 border border-gray-300 rounded text-sm"
+                          placeholder="Name"
+                        />
+                        <input
+                          type="text"
+                          value={param.type || ""}
+                          onChange={(e) => {
+                            const newResponses = [...(editingContent.responses || [])];
+                            const newParams = [...(newResponses[i].params || [])];
+                            newParams[j] = { ...(newParams[j] || {}), type: e.target.value };
+                            newResponses[i] = { ...(newResponses[i] || {}), params: newParams };
+                            setEditingContent({ ...editingContent, responses: newResponses });
+                          }}
+                          className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                          placeholder="Type"
+                        />
+                        <input
+                          type="text"
+                          value={param.description || ""}
+                          onChange={(e) => {
+                            const newResponses = [...(editingContent.responses || [])];
+                            const newParams = [...(newResponses[i].params || [])];
+                            newParams[j] = { ...(newParams[j] || {}), description: e.target.value };
+                            newResponses[i] = { ...(newResponses[i] || {}), params: newParams };
+                            setEditingContent({ ...editingContent, responses: newResponses });
+                          }}
+                          className="flex-1 min-w-[150px] px-2 py-1 border border-gray-300 rounded text-sm"
+                          placeholder="Description"
+                        />
+                        <button
+                          onClick={() => {
+                            const newResponses = [...(editingContent.responses || [])];
+                            newResponses[i] = { 
+                              ...(newResponses[i] || {}), 
+                              params: (newResponses[i].params || []).filter((_, idx) => idx !== j) 
+                            };
+                            setEditingContent({ ...editingContent, responses: newResponses });
+                          }}
+                          className="px-2 py-1 bg-red-500 text-white rounded text-sm flex-shrink-0"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => {
+                        const newResponses = [...(editingContent.responses || [])];
+                        newResponses[i] = { 
+                          ...(newResponses[i] || {}), 
+                          params: [...(newResponses[i].params || []), { name: "", type: "string", description: "" }] 
+                        };
+                        setEditingContent({ ...editingContent, responses: newResponses });
+                      }}
+                      className="px-2 py-1 bg-green-500 text-white rounded text-xs"
+                    >
+                      + Add Param
+                    </button>
+                  </div>
+
+                  <textarea
+                    value={res.example || ""}
                     onChange={(e) =>
-                      updateArrayItem("responseParams", i, "name", e.target.value)
+                      updateArrayItem("responses", i, "example", e.target.value)
                     }
-                    className="flex-1 min-w-[120px] px-3 py-2 border-2 border-gray-300 rounded-lg"
-                    placeholder="Name"
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg font-mono text-xs"
+                    rows="4"
+                    placeholder="Response body example (JSON)"
                   />
-                  <input
-                    type="text"
-                    value={param.type}
-                    onChange={(e) =>
-                      updateArrayItem("responseParams", i, "type", e.target.value)
-                    }
-                    className="w-32 px-3 py-2 border-2 border-gray-300 rounded-lg"
-                    placeholder="Type"
-                  />
-                  <input
-                    type="text"
-                    value={param.description}
-                    onChange={(e) =>
-                      updateArrayItem(
-                        "responseParams",
-                        i,
-                        "description",
-                        e.target.value
-                      )
-                    }
-                    className="flex-1 min-w-[200px] px-3 py-2 border-2 border-gray-300 rounded-lg"
-                    placeholder="Description"
-                  />
-                  <button
-                    onClick={() => removeArrayItem("responseParams", i)}
-                    className="px-3 py-2 bg-red-500 text-white rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               ))}
               <button
                 onClick={() =>
-                  addArrayItem("responseParams", {
-                    name: "",
-                    type: "string",
-                    description: "",
+                  addArrayItem("responses", {
+                    title: "",
+                    params: [],
+                    example: "{}",
                   })
                 }
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"
               >
-                + Add Parameter
+                + Add Response Example
               </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-bold mb-2">
-                  Request Example:
-                </label>
-                <textarea
-                  value={editingContent.requestExample || ""}
-                  onChange={(e) => updateContent("requestExample", e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg font-mono text-sm"
-                  rows="6"
-                  placeholder="{}"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold mb-2">
-                  Response Example:
-                </label>
-                <textarea
-                  value={editingContent.responseExample || ""}
-                  onChange={(e) =>
-                    updateContent("responseExample", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg font-mono text-sm"
-                  rows="6"
-                  placeholder="{}"
-                />
-              </div>
             </div>
           </div>
         );

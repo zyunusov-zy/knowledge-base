@@ -8,7 +8,7 @@ export default function ProjectList({ user, projects, setProjects, onSelectProje
   const fetchProjects = async () => {
     try {
       const token = sessionStorage.getItem("accessToken");
-      const res = await fetch("http://localhost:5172/api/projects", {
+      const res = await fetch("http://localhost:5000/api/projects", {
         headers: { Authorization: `Bearer ${token}` },
       });
 

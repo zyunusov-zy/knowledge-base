@@ -27,7 +27,7 @@ const Sidebar = ({ userRole, onNavigate, isCollapsed, onCollapseChange }) => {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:5172/api/auth/logout", {
+      await fetch("http://localhost:5000/api/auth/logout", {
         method: "POST",
         credentials: "include",
         headers: {

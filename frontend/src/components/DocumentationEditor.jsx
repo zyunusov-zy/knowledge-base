@@ -54,7 +54,7 @@ const DocumentationEditor = ({
         try {
           const token = sessionStorage.getItem("accessToken");
           const res = await fetch(
-            `http://localhost:5172/api/documentation/${documentationId}`,
+            `http://localhost:5000/api/documentation/${documentationId}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }
@@ -107,8 +107,8 @@ const handleSave = async () => {
     try {
       const token = sessionStorage.getItem("accessToken");
       const url = mode === "new"
-        ? "http://localhost:5172/api/documentation"
-        : `http://localhost:5172/api/documentation/${documentationId}`;
+        ? "http://localhost:5000/api/documentation"
+        : `http://localhost:5000/api/documentation/${documentationId}`;
       
       const method = mode === "new" ? "POST" : "PUT";
 

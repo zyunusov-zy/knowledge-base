@@ -316,69 +316,94 @@ const BlockViewMode = ({
             </code>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-blue-50 p-6 rounded-xl border-2 border-blue-200">
-              <h4 className="font-bold text-gray-900 mb-4 text-lg flex items-center gap-2">
+          {/* Request Examples */}
+          {block.content.requests && block.content.requests.length > 0 && (
+            <div className="mb-6">
+              <h4 className="font-bold text-gray-900 mb-4 text-xl flex items-center gap-2">
                 <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                Request params:
+                Request Examples
               </h4>
-              {block.content.requestParams.length > 0 ? (
-                block.content.requestParams.map((param, i) => (
-                  <div
-                    key={i}
-                    className="mb-3 text-sm bg-white p-3 rounded-lg border border-blue-200"
-                  >
-                    <span className="font-bold text-gray-900">{param.name}</span>
-                    <span className="text-blue-600 font-semibold">
-                      {" "}
-                      ({param.type})
-                    </span>
-                    {param.required && (
-                      <span className="text-red-600 font-bold">*</span>
-                    )}
-                    <p className="text-gray-600 mt-1">{param.description}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500 italic">No parameters</p>
-              )}
+              {block.content.requests.map((req, i) => (
+                <div key={i} className="mb-6 bg-blue-50 p-6 rounded-xl border-2 border-blue-200">
+                  {req.title && (
+                    <h5 className="font-bold text-gray-900 mb-3 text-lg">{req.title}</h5>
+                  )}
+                  {req.params && req.params.length > 0 && (
+                    <div className="mb-4">
+                      <h6 className="font-semibold text-gray-800 mb-2 text-sm">Parameters:</h6>
+                      {req.params.map((param, j) => (
+                        <div
+                          key={j}
+                          className="mb-2 text-sm bg-white p-3 rounded-lg border border-blue-200"
+                        >
+                          <span className="font-bold text-gray-900">{param.name}</span>
+                          <span className="text-blue-600 font-semibold">
+                            {" "}
+                            ({param.type})
+                          </span>
+                          {param.required && (
+                            <span className="text-red-600 font-bold">*</span>
+                          )}
+                          <p className="text-gray-600 mt-1">{param.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {req.example && (
+                    <div>
+                      <h6 className="font-semibold text-gray-800 mb-2 text-sm">Example:</h6>
+                      <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl text-xs overflow-x-auto border-2 border-gray-700">
+                        <code>{req.example}</code>
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
+          )}
 
-            <div className="bg-green-50 p-6 rounded-xl border-2 border-green-200">
-              <h4 className="font-bold text-gray-900 mb-4 text-lg flex items-center gap-2">
+          {/* Response Examples */}
+          {block.content.responses && block.content.responses.length > 0 && (
+            <div className="mb-6">
+              <h4 className="font-bold text-gray-900 mb-4 text-xl flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                Response params:
+                Response Examples
               </h4>
-              {block.content.responseParams.length > 0 ? (
-                block.content.responseParams.map((param, i) => (
-                  <div
-                    key={i}
-                    className="mb-3 text-sm bg-white p-3 rounded-lg border border-green-200"
-                  >
-                    <span className="font-bold text-gray-900">{param.name}</span>
-                    <span className="text-green-600 font-semibold">
-                      {" "}
-                      ({param.type})
-                    </span>
-                    <p className="text-gray-600 mt-1">{param.description}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500 italic">No parameters</p>
-              )}
+              {block.content.responses.map((res, i) => (
+                <div key={i} className="mb-6 bg-green-50 p-6 rounded-xl border-2 border-green-200">
+                  {res.title && (
+                    <h5 className="font-bold text-gray-900 mb-3 text-lg">{res.title}</h5>
+                  )}
+                  {res.params && res.params.length > 0 && (
+                    <div className="mb-4">
+                      <h6 className="font-semibold text-gray-800 mb-2 text-sm">Parameters:</h6>
+                      {res.params.map((param, j) => (
+                        <div
+                          key={j}
+                          className="mb-2 text-sm bg-white p-3 rounded-lg border border-green-200"
+                        >
+                          <span className="font-bold text-gray-900">{param.name}</span>
+                          <span className="text-green-600 font-semibold">
+                            {" "}
+                            ({param.type})
+                          </span>
+                          <p className="text-gray-600 mt-1">{param.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {res.example && (
+                    <div>
+                      <h6 className="font-semibold text-gray-800 mb-2 text-sm">Example:</h6>
+                      <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl text-xs overflow-x-auto border-2 border-gray-700">
+                        <code>{res.example}</code>
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-bold text-gray-900 mb-3 text-lg">
-                Response body:
-              </h4>
-              <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl text-sm overflow-x-auto border-2 border-gray-700">
-                <code>{block.content.responseExample}</code>
-              </pre>
-            </div>
-          </div>
+          )}
         </div>
       );
 

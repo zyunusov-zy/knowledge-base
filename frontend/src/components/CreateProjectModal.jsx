@@ -17,7 +17,7 @@ export default function CreateProjectModal({ onClose, onCreated }) {
 
     try {
       const token = sessionStorage.getItem("accessToken");
-      const res = await fetch("http://localhost:5172/api/projects", {
+      const res = await fetch("http://localhost:5000/api/projects", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,

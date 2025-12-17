@@ -19,7 +19,7 @@ export default function MainPage() {
     const fetchUser = async () => {
       try {
         const token = sessionStorage.getItem("accessToken");
-        const res = await fetch("http://localhost:5172/api/users/me", {
+        const res = await fetch("http://localhost:5000/api/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Failed to fetch user");
